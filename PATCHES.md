@@ -65,3 +65,9 @@ Window" popup button) did not work reliably and lives on the
 
 `about:debugging#/runtime/this-firefox` → Load Temporary Add-on → select
 `manifest.json`. Removed on browser restart.
+
+## Upstream PR
+
+Submitted to Trogen898/Frame-Sync: <https://github.com/Trogen898/Frame-Sync/pull/6>
+(branch `pr/firefox-sync-fixes`, 5 commits based on upstream `main`).
+Fork/backup: <https://github.com/mera9595790-create/Frame-Sync>
