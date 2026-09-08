@@ -65,7 +65,7 @@ Upstream version: 1.8.1
   Synthetic captureStream sources are NOT throttled — the bug is specific to
   the decoded-video (MediaDecoder/MSE) path, i.e. real YouTube content.
 
-## v1.8.7 — rVFC path removed (current)
+## v1.8.7 — rVFC path removed
 
 - Empirical testing (Firefox 155, real webm video) showed rVFC is throttled
   to ~24 Hz on real decoded content anyway, so the adaptive detection always
@@ -75,6 +75,13 @@ Upstream version: 1.8.1
   never under-samples.
 - Upstream PR branch rebuilt as two clean commits (capture rework + measure
   rewrite) and force-pushed to PR #6; PR description updated.
+
+## v1.8.8 — ms scale on the measurement waveform (current)
+
+- Auto Measure waveform gets a millisecond time axis anchored at the beep
+  play time (ticks every 100 ms, labels every 500 ms) and a green delay
+  bracket with the measured value between the red (play) and blue (heard)
+  markers.
 
 ## Known limitation
 

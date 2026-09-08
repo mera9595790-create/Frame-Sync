@@ -271,11 +271,16 @@ function drawAnalysisWindow(freq, playTime, heardTime) {
     const t0 = playTime - 0.3;
     const t1 = playTime + SEARCH_WINDOW;
     const span = t1 - t0;
+    const axisH = 26;              // bottom strip reserved for the ms scale
+    const plotH = height - axisH;
 
     ctx2d.clearRect(0, 0, width, height);
     ctx2d.fillStyle = 'rgba(200, 200, 200, 0.5)';
-    ctx2d.fillRect(0, 0, width, height);
+    ctx2d.fillRect(0, 0, width, plotH);
+    ctx2d.fillStyle = '#e8e8e8';
+    ctx2d.fillRect(0, plotH, width, axisH);
 
+    // waveform
     ctx2d.strokeStyle = 'rgb(0, 0, 0)';
     ctx2d.lineWidth = 1;
     ctx2d.beginPath();
@@ -287,7 +292,7 @@ function drawAnalysisWindow(freq, playTime, heardTime) {
             const t = blockSampleTime(b, i);
             if (t < t0 || t > t1) continue;
             const x = ((t - t0) / span) * width;
-            const y = (b.data[i] * 0.5 + 0.5) * height;
+            const y = (b.data[i] * 0.5 + 0.5) * plotH;
             if (!started) {
                 ctx2d.moveTo(x, y);
                 started = true;
@@ -298,28 +303,80 @@ function drawAnalysisWindow(freq, playTime, heardTime) {
     }
     ctx2d.stroke();
 
-    const px = ((playTime - t0) / span) * width;
+    const toX = t => ((t - t0) / span) * width;
+
+    // ms scale anchored at the beep play time: ticks every 100 ms,
+    // labels every 500 ms
+    ctx2d.strokeStyle = '#555';
+    ctx2d.fillStyle = '#333';
+    ctx2d.font = '11px Arial';
+    ctx2d.textAlign = 'center';
+    ctx2d.lineWidth = 1;
+    ctx2d.beginPath();
+    ctx2d.moveTo(0, plotH + 0.5);
+    ctx2d.lineTo(width, plotH + 0.5);
+    ctx2d.stroke();
+    const msStart = Math.ceil((t0 - playTime) * 1000 / 100) * 100;
+    const msEnd = (t1 - playTime) * 1000;
+    for (let ms = msStart; ms <= msEnd; ms += 100) {
+        const x = toX(playTime + ms / 1000);
+        const major = ms % 500 === 0;
+        ctx2d.beginPath();
+        ctx2d.moveTo(x, plotH);
+        ctx2d.lineTo(x, plotH + (major ? 9 : 5));
+        ctx2d.stroke();
+        if (major && x > 26 && x < width - 26) {
+            ctx2d.fillText((ms > 0 ? '+' : '') + ms + ' ms', x, plotH + 21);
+        }
+    }
+    ctx2d.textAlign = 'left';
+
+    // red marker: scheduled play time
+    const px = toX(playTime);
     ctx2d.strokeStyle = 'red';
     ctx2d.lineWidth = 2;
     ctx2d.beginPath();
     ctx2d.moveTo(px, 0);
-    ctx2d.lineTo(px, height);
+    ctx2d.lineTo(px, plotH);
     ctx2d.stroke();
     ctx2d.fillStyle = 'red';
     ctx2d.font = '12px Arial';
     ctx2d.fillText(`play ${freq} Hz`, px + 5, 15);
 
     if (heardTime !== null) {
-        const hx = ((heardTime - t0) / span) * width;
+        // blue marker: heard through the mic
+        const hx = toX(heardTime);
         ctx2d.strokeStyle = 'blue';
         ctx2d.lineWidth = 2;
         ctx2d.beginPath();
         ctx2d.moveTo(hx, 0);
-        ctx2d.lineTo(hx, height);
+        ctx2d.lineTo(hx, plotH);
         ctx2d.stroke();
         ctx2d.fillStyle = 'blue';
         ctx2d.font = '12px Arial';
-        ctx2d.fillText('heard', hx + 5, 30);
+        ctx2d.fillText('heard', hx + 5, 32);
+
+        // green bracket with the measured delay between the two markers
+        const delayMs = (heardTime - playTime) * 1000;
+        const by = 52;
+        ctx2d.strokeStyle = '#0a7d00';
+        ctx2d.lineWidth = 2;
+        ctx2d.beginPath();
+        ctx2d.moveTo(px, by);
+        ctx2d.lineTo(hx, by);
+        ctx2d.moveTo(px, by - 5);
+        ctx2d.lineTo(px, by + 5);
+        ctx2d.moveTo(hx, by - 5);
+        ctx2d.lineTo(hx, by + 5);
+        ctx2d.stroke();
+        const label = `${delayMs.toFixed(0)} ms`;
+        ctx2d.font = 'bold 13px Arial';
+        const tw = ctx2d.measureText(label).width;
+        const lx = Math.min(Math.max((px + hx) / 2 - tw / 2, 2), width - tw - 4);
+        ctx2d.fillStyle = 'rgba(255, 255, 255, 0.85)';
+        ctx2d.fillRect(lx - 3, by - 21, tw + 6, 17);
+        ctx2d.fillStyle = '#0a7d00';
+        ctx2d.fillText(label, lx, by - 8);
     }
 }
 
