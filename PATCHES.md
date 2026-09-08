@@ -31,7 +31,7 @@ Upstream version: 1.8.1
   until 5 s of real samples, mic processing (NS/AEC/AGC) disabled,
   guaranteed cleanup.
 
-## v1.8.4 — current stable
+## v1.8.4
 
 - Reworked frame capture: async `createImageBitmap(video, {resizeWidth,
   resizeHeight})` ring instead of synchronous main-thread
@@ -47,6 +47,17 @@ Upstream version: 1.8.1
   timestamps, Goertzel detection with adaptive noise floor, warm-up beep
   excluded, live median/min/max, waveform with play/heard markers.
   Note: measured value includes mic input-path latency (+~20–40 ms typical).
+
+## v1.8.6 — adaptive capture source (current)
+
+- Firefox throttles requestVideoFrameCallback to ~40 ms (25 Hz) on every
+  version since rVFC shipped — Bugzilla 1935256, still unfixed. Videos above
+  25 fps lose frames with pure rVFC capture (this also vindicates the
+  upstream rVFC→rAF switch, at least on Firefox).
+- The capture loop now detects throttling at runtime via
+  metadata.presentedFrames jumps between callbacks; after 5 detected skips
+  the video permanently switches to rAF-driven capture. rVFC (with exact
+  expectedDisplayTime pacing) stays active where it behaves per spec.
 
 ## Known limitation
 

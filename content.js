@@ -40,6 +40,13 @@
             this._useRVFC = typeof video.requestVideoFrameCallback === 'function';
             this._savedOpacity = null;
             this._overlayTookOver = false;
+            // Firefox bug 1935256: rVFC callbacks are throttled to ~40 ms (25 Hz)
+            // on every Firefox version since rVFC shipped, silently skipping
+            // presented frames for videos above 25 fps. Detect the throttling via
+            // presentedFrames jumps and fall back to rAF-driven capture.
+            this._rvfcThrottled = false;
+            this._rvfcSkips = 0;
+            this._lastPresentedFrames = -1;
 
             this._seekingFunc = () => {
                 this.isSeeking = true;
@@ -48,6 +55,8 @@
                     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
                 }
                 this.lastDrawnTs = -1;
+                this._lastPresentedFrames = -1;
+                this._rvfcSkips = 0;
                 // Show the real video while seeking (loader / seek previews)
                 this._showOriginalVideo();
             };
@@ -201,13 +210,36 @@
         // Capture loop driven by requestVideoFrameCallback: fires exactly once
         // per presented video frame; expectedDisplayTime gives an accurate
         // presentation timestamp on the same timeline as rAF.
+        // On Firefox (bug 1935256) the callbacks are throttled to ~25 Hz; when
+        // that is detected, this video permanently switches to rAF capture.
         _captureRVFC(now, metadata) {
             if (!this.active) return; // deactivated: end the loop
+            if (!this._rvfcThrottled && metadata && typeof metadata.presentedFrames === 'number') {
+                if (this._lastPresentedFrames >= 0) {
+                    const delta = metadata.presentedFrames - this._lastPresentedFrames;
+                    if (delta > 1) {
+                        // Frames were presented without a callback: throttled
+                        this._rvfcSkips++;
+                        if (this._rvfcSkips >= 5) {
+                            this._rvfcThrottled = true;
+                            requestAnimationFrame(this._captureRAFFunc);
+                            return; // stop re-arming rVFC for this video
+                        }
+                    } else if (delta === 1) {
+                        this._rvfcSkips = Math.max(0, this._rvfcSkips - 1);
+                    }
+                }
+                this._lastPresentedFrames = metadata.presentedFrames;
+            }
             if (!this.video.paused && !document.hidden && !this.isSeeking) {
                 const ts = (metadata && metadata.expectedDisplayTime) ? metadata.expectedDisplayTime : now;
                 this._captureFrame(ts);
             }
-            this.video.requestVideoFrameCallback(this._captureRVFCFunc);
+            // Always re-arm (unless throttled): while paused/hidden the pending
+            // callback simply waits for the next presented frame.
+            if (!this._rvfcThrottled) {
+                this.video.requestVideoFrameCallback(this._captureRVFCFunc);
+            }
         }
 
         // rAF fallback for browsers without requestVideoFrameCallback
