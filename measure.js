@@ -56,14 +56,13 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-function getFrequencyList() {
+function getCurrentFrequency() {
     const base = Number.parseFloat(frequencyInput && frequencyInput.value);
-    const f0 = Number.isFinite(base) && base > 0 ? base : 1000;
-    // Rotate around the base tone; stay inside the narrow-band-safe range
-    // (Bluetooth HFP microphones pass roughly 300-3400 Hz).
-    return [1, 1.25, 0.8, 1.6]
-        .map(k => Math.round(f0 * k))
-        .map(f => Math.min(3400, Math.max(200, f)));
+    const f = Number.isFinite(base) && base > 0 ? base : 1000;
+    // Read live each cycle: the value can be changed while the test runs.
+    // Clamp to a range microphones can capture; Bluetooth HFP headset mics
+    // are narrow-band, so prefer <= 3400 Hz for those.
+    return Math.min(8000, Math.max(100, Math.round(f)));
 }
 
 async function waitForContextReady(ctx, timeoutMs = 10000) {
@@ -153,11 +152,10 @@ async function startTest() {
             while (blocks.length && blocks[0].endTime < cutoff) blocks.shift();
         };
 
-        const freqs = getFrequencyList();
         let beepIndex = 0;
 
         while (!stopRequested) {
-            const freq = freqs[beepIndex % freqs.length];
+            const freq = getCurrentFrequency();
             await runBeepCycle(freq, beepIndex);
             beepIndex++;
             if (!stopRequested) updateSummary();

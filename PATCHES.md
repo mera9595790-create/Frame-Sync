@@ -76,12 +76,18 @@ Upstream version: 1.8.1
 - Upstream PR branch rebuilt as two clean commits (capture rework + measure
   rewrite) and force-pushed to PR #6; PR description updated.
 
-## v1.8.8 — ms scale on the measurement waveform (current)
+## v1.8.8 — ms scale on the measurement waveform
 
 - Auto Measure waveform gets a millisecond time axis anchored at the beep
   play time (ticks every 100 ms, labels every 500 ms) and a green delay
   bracket with the measured value between the red (play) and blue (heard)
   markers.
+
+## v1.8.9 — beep frequency follows the input field (current)
+
+- Auto Measure no longer rotates derived tones (x1.25/x0.8/x1.6): every
+  beep uses the frequency entered on the page, read live before each cycle,
+  so it can be changed while the test runs. Clamped to 100-8000 Hz.
 
 ## Known limitation
 
