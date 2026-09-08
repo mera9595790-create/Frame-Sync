@@ -40,6 +40,8 @@
             this._useRVFC = typeof video.requestVideoFrameCallback === 'function';
             this._savedOpacity = null;
             this._overlayTookOver = false;
+            // PATCH: remember PiP flag so we can restore it on deactivate
+            this._savedPipDisabled = null;
 
             this._seekingFunc = () => {
                 this.isSeeking = true;
@@ -314,6 +316,14 @@
             if (this.active) return;
             this.active = true;
             this._createCanvasOverlay();
+            // PATCH: native Picture-in-Picture renders decoded frames in a
+            // separate browser window, bypassing the page DOM - the delay
+            // overlay cannot reach it and PiP would show unsynchronized video.
+            // Disable the PiP toggle while the delay is active.
+            if (this._savedPipDisabled === null) {
+                this._savedPipDisabled = this.video.disablePictureInPicture;
+            }
+            this.video.disablePictureInPicture = true;
             if (this._useRVFC) {
                 this.video.requestVideoFrameCallback(this._captureRVFCFunc);
             } else {
@@ -331,6 +341,12 @@
 
             this._flushEntries();
             this._showOriginalVideo();
+
+            // PATCH: restore native PiP availability
+            if (this._savedPipDisabled !== null) {
+                this.video.disablePictureInPicture = this._savedPipDisabled;
+                this._savedPipDisabled = null;
+            }
 
             if (this.canvas) {
                 this.canvas.remove();

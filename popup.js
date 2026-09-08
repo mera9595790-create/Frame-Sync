@@ -38,3 +38,26 @@ refreshPauseResumeButton();
 
 const frameDelayInput = document.getElementById('frameDelay');
 frameDelayInput.addEventListener('input', onFrameDelayChange);
+
+// Open the current page in a small popup window: the page DOM (and therefore
+// the delay overlay) keeps working there, unlike in native PiP.
+document.getElementById('miniWindowButton').addEventListener('click', async () => {
+    try {
+        const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+        const tab = tabs && tabs[0];
+        if (!tab || !tab.url || tab.url.startsWith('about:')) {
+            alert('No suitable page in the active tab.');
+            return;
+        }
+        await browser.windows.create({
+            url: tab.url,
+            type: 'popup',
+            width: 560,
+            height: 400,
+        });
+        window.close();
+    } catch (e) {
+        console.error(e);
+        alert('Could not open the mini window: ' + (e && e.message ? e.message : e));
+    }
+});
