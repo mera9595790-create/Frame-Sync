@@ -48,7 +48,7 @@ Upstream version: 1.8.1
   excluded, live median/min/max, waveform with play/heard markers.
   Note: measured value includes mic input-path latency (+~20–40 ms typical).
 
-## v1.8.6 — adaptive capture source (current)
+## v1.8.6 — adaptive capture source
 
 - Firefox throttles requestVideoFrameCallback to ~40 ms (25 Hz) on every
   version since rVFC shipped — Bugzilla 1935256, still unfixed. Videos above
@@ -64,6 +64,17 @@ Upstream version: 1.8.1
   tripped within ~5 skips and capture continued at display rate (144 Hz).
   Synthetic captureStream sources are NOT throttled — the bug is specific to
   the decoded-video (MediaDecoder/MSE) path, i.e. real YouTube content.
+
+## v1.8.7 — rVFC path removed (current)
+
+- Empirical testing (Firefox 155, real webm video) showed rVFC is throttled
+  to ~24 Hz on real decoded content anyway, so the adaptive detection always
+  ended up switching to rAF in practice. Removed the rVFC path and the
+  throttle detection entirely: capture always runs on rAF at display rate,
+  with async createImageBitmap keeping it off the main thread. Fewer states,
+  never under-samples.
+- Upstream PR branch rebuilt as two clean commits (capture rework + measure
+  rewrite) and force-pushed to PR #6; PR description updated.
 
 ## Known limitation
 
