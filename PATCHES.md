@@ -58,6 +58,12 @@ Upstream version: 1.8.1
   metadata.presentedFrames jumps between callbacks; after 5 detected skips
   the video permanently switches to rAF-driven capture. rVFC (with exact
   expectedDisplayTime pacing) stays active where it behaves per spec.
+- Verified empirically on Firefox 155 / Windows (144 Hz display): a real webm
+  clip presenting ~52 fps got rVFC callbacks at only 24.4 Hz (median interval
+  41.7 ms, presentedFrames delta=2 on 94/97 callbacks); the adaptive fallback
+  tripped within ~5 skips and capture continued at display rate (144 Hz).
+  Synthetic captureStream sources are NOT throttled — the bug is specific to
+  the decoded-video (MediaDecoder/MSE) path, i.e. real YouTube content.
 
 ## Known limitation
 
