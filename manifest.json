@@ -1,0 +1,35 @@
+{
+    "manifest_version": 3,
+    "name": "Frame Sync (patched: rVFC + adaptive buffer)",
+    "version": "1.8.4",
+    "description": "Frame Sync is the best solution for wireless audio delay, syncing video with audio for lag-free playback",
+    "permissions": [
+        "storage"
+    ],
+    "host_permissions": [
+        "<all_urls>"
+    ],
+    "action": {
+        "default_popup": "popup.html"
+    },
+    "content_scripts": [
+        {
+            "matches": [
+                "<all_urls>"
+            ],
+            "js": [
+                "content.js"
+            ],
+            "all_frames": true
+        }
+    ],
+    "icons": {
+        "256": "icon.png"
+    },
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "framesync-patched@example.com",
+            "strict_min_version": "109.0"
+        }
+    }
+}
